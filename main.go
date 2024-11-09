@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"os"
@@ -13,6 +12,9 @@ import (
 	"os/signal"
 	"strings"
 	"time"
+
+	"vimagination.zapto.org/javascript"
+	"vimagination.zapto.org/parser"
 )
 
 func main() {
@@ -74,10 +76,14 @@ func run() error {
 		return err
 	}
 
-	var sb strings.Builder
+	tk := parser.NewReaderTokeniser(f)
 
-	_, err = io.Copy(&sb, f)
-	f.Close()
+	m, err := javascript.ParseModule(javascript.AsTypescript(&tk))
+	if err != nil {
+		return err
+	}
+
+	source := fmt.Sprintf("%s", m)
 
 	l, err := net.ListenTCP("tcp", &net.TCPAddr{
 		IP:   net.IPv4(127, 0, 0, 1),
@@ -93,7 +99,7 @@ func run() error {
 
 	mux.Handle("/", serveContents(indexHTML))
 	mux.Handle("/auto.js", serveContents(codeJS))
-	mux.Handle("/script.js", serveContents(sb.String()))
+	mux.Handle("/script.js", serveContents(source))
 
 	server := http.Server{
 		Handler: &mux,
