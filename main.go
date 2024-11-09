@@ -13,7 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/websocket"
 	"vimagination.zapto.org/javascript"
+	"vimagination.zapto.org/jsonrpc"
 	"vimagination.zapto.org/parser"
 )
 
@@ -97,13 +99,18 @@ func run() error {
 
 	var mux http.ServeMux
 
-	mux.Handle("/", serveContents(indexHTML))
-	mux.Handle("/auto.js", serveContents(codeJS))
-	mux.Handle("/script.js", serveContents(source))
-
 	server := http.Server{
 		Handler: &mux,
 	}
+
+	rpc := new(rpc)
+
+	mux.Handle("/", serveContents(indexHTML))
+	mux.Handle("/auto.js", serveContents(codeJS))
+	mux.Handle("/script.js", serveContents(source))
+	mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
+		jsonrpc.New(conn, rpc).Handle()
+	}))
 
 	go server.Serve(l)
 
@@ -125,4 +132,10 @@ func run() error {
 	}()
 
 	return cmd.Wait()
+}
+
+type rpc struct{}
+
+func (rpc) HandleRPC(method string, data json.RawMessage) (any, error) {
+	return nil, nil
 }
