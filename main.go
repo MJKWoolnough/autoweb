@@ -3,14 +3,18 @@ package main
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -103,13 +107,17 @@ func run() error {
 		Handler: &mux,
 	}
 
-	rpc := new(rpc)
+	rpc := &rpc{
+		server: &server,
+	}
 
 	mux.Handle("/", serveContents(indexHTML))
 	mux.Handle("/auto.js", serveContents(codeJS))
 	mux.Handle("/script.js", serveContents(source))
 	mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
 		jsonrpc.New(conn, rpc).Handle()
+
+		rpc.server = &server
 	}))
 
 	go server.Serve(l)
@@ -134,8 +142,41 @@ func run() error {
 	return cmd.Wait()
 }
 
-type rpc struct{}
+type rpc struct {
+	mu     sync.RWMutex
+	server *http.Server
+}
 
-func (rpc) HandleRPC(method string, data json.RawMessage) (any, error) {
+func (r *rpc) HandleRPC(method string, data json.RawMessage) (any, error) {
+	switch method {
+	case "proxy":
+		return handle(data, r.proxy)
+	}
+
+	return nil, ErrUnknownEndpoint
+}
+
+func handle[T any](data json.RawMessage, fn func(data T) (any, error)) (any, error) {
+	var v T
+
+	if err := json.Unmarshal(data, &v); err != nil {
+		return nil, err
+	}
+
+	return fn(v)
+}
+
+func (r *rpc) proxy(u string) (any, error) {
+	rp, err := url.Parse(u)
+	if err != nil {
+		return nil, err
+	}
+
+	r.mu.Lock()
+	r.server.Handler = httputil.NewSingleHostReverseProxy(rp)
+	r.mu.Unlock()
+
 	return nil, nil
 }
+
+var ErrUnknownEndpoint = errors.New("unknown endpoint")
