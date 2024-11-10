@@ -68,12 +68,14 @@ func (b Browser) Launch(url string) *exec.Cmd {
 
 func run() error {
 	var (
-		browser Browser
-		port    int
-		script  string
+		browser   Browser
+		port      int
+		script    string
+		keepAlive bool
 	)
 
 	flag.Var(&browser, "b", "Specify the browser to launch. Either just a path or a JSON encoded array of the command parts.")
+	flag.BoolVar(&keepAlive, "k", false, "don't exit when browser command returns")
 	flag.IntVar(&port, "p", 0, "Port for server to listen on.")
 	flag.StringVar(&script, "s", "", "Script to run.")
 	flag.Parse()
@@ -145,11 +147,15 @@ func run() error {
 	}
 
 	go func() {
-		<-c
+		c <- <-c
 
 		l.Close()
 		cmd.Process.Signal(os.Interrupt)
 	}()
+
+	if keepAlive {
+		c <- <-c
+	}
 
 	return cmd.Wait()
 }
