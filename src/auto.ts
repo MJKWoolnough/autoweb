@@ -13,13 +13,13 @@ class ControlClass {
 
 export type Control = InstanceType<typeof ControlClass>;
 
-const base = new URL(window.location+"");
-
 queue(() => ready);
+
+const f = fetch;
 
 window.WebSocket = class extends WebSocket{};
 window.XMLHttpRequest = class extends XMLHttpRequest{};
-base.protocol = base.protocol === "https" ? "wss" : "ws";
+window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => f(input, init);
 
 export default (url: string, fn: (c: Control) => Promise<void> ) => {
 	return queue(() => WS("/socket").then(ws => {
