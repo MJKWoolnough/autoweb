@@ -1,0 +1,3 @@
+#!/bin/bash
+
+jspacker -i "/src/auto.js" -n -e | terser -m  --module --compress pure_getters,passes=3 --ecma 2020 | tr -d '\n' > auto.js;
