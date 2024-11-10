@@ -14,7 +14,7 @@ window.WebSocket = class extends WebSocket{};
 window.XMLHttpRequest = class extends XMLHttpRequest{};
 window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => f(input, init);
 
-export default (url: string, fn: (c: typeof control) => Promise<void> ) => {
+export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 	return queue(() => WS("/socket").then(ws => {
 		rpc = new RPC(ws);
 
