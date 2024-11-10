@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -101,7 +102,10 @@ func run() error {
 
 	defer l.Close()
 
-	var mux http.ServeMux
+	var (
+		mux              http.ServeMux
+		singleConnection uint32
+	)
 
 	server := http.Server{
 		Handler: &mux,
@@ -115,7 +119,15 @@ func run() error {
 	mux.Handle("/auto.js", serveContents(codeJS))
 	mux.Handle("/script.js", serveContents(source))
 	mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
-		jsonrpc.New(conn, rpc).Handle()
+		srv := jsonrpc.New(conn, rpc)
+		if !atomic.CompareAndSwapUint32(&singleConnection, 0, 1) {
+			srv.Send(ErrSingleConnection)
+
+			return
+		}
+
+		srv.Handle()
+		atomic.StoreUint32(&singleConnection, 0)
 
 		rpc.server = &server
 	}))
@@ -179,4 +191,12 @@ func (r *rpc) proxy(u string) (any, error) {
 	return nil, nil
 }
 
-var ErrUnknownEndpoint = errors.New("unknown endpoint")
+var (
+	ErrUnknownEndpoint  = errors.New("unknown endpoint")
+	ErrSingleConnection = jsonrpc.Response{
+		ID: -999,
+		Error: &jsonrpc.Error{
+			Message: "only a single connection is allowed",
+		},
+	}
+)
