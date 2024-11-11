@@ -73,6 +73,8 @@ func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 		return handle(data, s.moveMouse)
 	case "clickMouse":
 		return handle(data, s.clickMouse)
+	case "dblClickMouse":
+		return handle(data, s.dblClickMouse)
 	}
 
 	return nil, ErrUnknownEndpoint
@@ -119,6 +121,16 @@ func (s *Server) clickMouse(button string) (any, error) {
 	}
 
 	robotgo.Click(button)
+
+	return nil, nil
+}
+
+func (s *Server) dblClickMouse(button string) (any, error) {
+	if _, ok := robotgo.MouseMap[button]; !ok {
+		return nil, ErrUnknownMouseButton
+	}
+
+	robotgo.Click(button, true)
 
 	return nil, nil
 }
