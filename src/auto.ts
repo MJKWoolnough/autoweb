@@ -3,6 +3,8 @@ import ready from './lib/load.js';
 import {queue} from './lib/misc.js';
 import {RPC} from './lib/rpc.js';
 
+type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight";
+
 queue(() => ready);
 
 let windowX = 0, windowY = 0;
@@ -11,7 +13,8 @@ const f = fetch,
       rpc = new RPC(),
       control = Object.freeze({
 	      "moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
-	      "clickMouse": (button?: "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight") => queue(() => rpc.request("clickMouse", button === "centre" || button === "middle" ? "center" : button ?? "left"))
+	      "clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", button === "centre" || button === "middle" ? "center" : button ?? "left")),
+	      "dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", button === "centre" || button === "middle" ? "center" : button ?? "left"))
       });
 
 window.WebSocket = class extends WebSocket{};
