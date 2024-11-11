@@ -9,6 +9,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/go-vgo/robotgo"
 	"golang.org/x/net/websocket"
 	"vimagination.zapto.org/jsonrpc"
 )
@@ -66,6 +67,8 @@ func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 	switch method {
 	case "proxy":
 		return handle(data, s.proxy)
+	case "movemouse":
+		return handle(data, s.moveMouse)
 	}
 
 	return nil, ErrUnknownEndpoint
@@ -90,6 +93,12 @@ func (s *Server) proxy(u string) (any, error) {
 	s.mu.Lock()
 	s.rproxy = httputil.NewSingleHostReverseProxy(rp)
 	s.mu.Unlock()
+
+	return nil, nil
+}
+
+func (s *Server) moveMouse(mi [2]int) (any, error) {
+	robotgo.Move(mi[0], mi[1])
 
 	return nil, nil
 }
