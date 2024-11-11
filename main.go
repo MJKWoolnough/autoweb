@@ -85,8 +85,6 @@ func run() error {
 		return err
 	}
 
-	source := fmt.Sprintf("%s", m)
-
 	l, err := net.ListenTCP("tcp", &net.TCPAddr{
 		IP:   net.IPv4(127, 0, 0, 1),
 		Port: port,
@@ -97,18 +95,9 @@ func run() error {
 
 	defer l.Close()
 
-	var mux http.ServeMux
+	server := newServer(fmt.Sprintf("%s", m))
 
-	server := http.Server{
-		Handler: &mux,
-	}
-
-	mux.Handle("/", serveContents(indexHTML))
-	mux.Handle("/auto.js", serveContents(codeJS))
-	mux.Handle("/script.js", serveContents(source))
-	mux.Handle("/socket", rpcInit(&server))
-
-	go server.Serve(l)
+	go http.Serve(l, server)
 
 	c := make(chan os.Signal, 1)
 

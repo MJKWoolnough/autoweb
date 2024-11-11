@@ -13,20 +13,26 @@ import (
 	"vimagination.zapto.org/jsonrpc"
 )
 
-type rpc struct {
-	mu     sync.RWMutex
-	server *http.Server
+type Server struct {
+	mu      sync.RWMutex
+	handler http.Handler
+	mux     http.ServeMux
+	rproxy  *httputil.ReverseProxy
 }
 
-func rpcInit(server *http.Server) websocket.Handler {
+func newServer(source string) *Server {
+	var mux http.ServeMux
+
+	s := new(Server)
+
+	mux.Handle("/", serveContents(indexHTML))
+	mux.Handle("/auto.js", serveContents(codeJS))
+	mux.Handle("/script.js", serveContents(source))
+
 	var singleConnection uint32
 
-	rpc := &rpc{
-		server: server,
-	}
-
-	return websocket.Handler(func(conn *websocket.Conn) {
-		srv := jsonrpc.New(conn, rpc)
+	mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
+		srv := jsonrpc.New(conn, s)
 		if !atomic.CompareAndSwapUint32(&singleConnection, 0, 1) {
 			srv.Send(ErrSingleConnection)
 
@@ -36,14 +42,30 @@ func rpcInit(server *http.Server) websocket.Handler {
 		srv.Handle()
 		atomic.StoreUint32(&singleConnection, 0)
 
-		rpc.server = server
-	})
+		s.rproxy = nil
+	}))
+
+	return s
 }
 
-func (r *rpc) HandleRPC(method string, data json.RawMessage) (any, error) {
+func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var h http.Handler = &s.mux
+
+	s.mu.RLock()
+	p := s.rproxy
+	s.mu.RUnlock()
+
+	if p != nil {
+		h = p
+	}
+
+	h.ServeHTTP(w, r)
+}
+
+func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 	switch method {
 	case "proxy":
-		return handle(data, r.proxy)
+		return handle(data, s.proxy)
 	}
 
 	return nil, ErrUnknownEndpoint
@@ -59,15 +81,15 @@ func handle[T any](data json.RawMessage, fn func(data T) (any, error)) (any, err
 	return fn(v)
 }
 
-func (r *rpc) proxy(u string) (any, error) {
+func (s *Server) proxy(u string) (any, error) {
 	rp, err := url.Parse(u)
 	if err != nil {
 		return nil, err
 	}
 
-	r.mu.Lock()
-	r.server.Handler = httputil.NewSingleHostReverseProxy(rp)
-	r.mu.Unlock()
+	s.mu.Lock()
+	s.rproxy = httputil.NewSingleHostReverseProxy(rp)
+	s.mu.Unlock()
 
 	return nil, nil
 }
