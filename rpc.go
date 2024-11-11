@@ -71,6 +71,8 @@ func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 		return s.mouseCoords()
 	case "moveMouse":
 		return handle(data, s.moveMouse)
+	case "clickMouse":
+		return handle(data, s.clickMouse)
 	}
 
 	return nil, ErrUnknownEndpoint
@@ -111,9 +113,20 @@ func (s *Server) moveMouse(mi [2]int) (any, error) {
 	return nil, nil
 }
 
+func (s *Server) clickMouse(button string) (any, error) {
+	if _, ok := robotgo.MouseMap[button]; !ok {
+		return nil, ErrUnknownMouseButton
+	}
+
+	robotgo.Click(button)
+
+	return nil, nil
+}
+
 var (
-	ErrUnknownEndpoint  = errors.New("unknown endpoint")
-	ErrSingleConnection = jsonrpc.Response{
+	ErrUnknownEndpoint    = errors.New("unknown endpoint")
+	ErrUnknownMouseButton = errors.New("unknown mouse button")
+	ErrSingleConnection   = jsonrpc.Response{
 		ID: -999,
 		Error: &jsonrpc.Error{
 			Message: "only a single connection is allowed",
