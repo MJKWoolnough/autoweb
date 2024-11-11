@@ -67,7 +67,9 @@ func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 	switch method {
 	case "proxy":
 		return handle(data, s.proxy)
-	case "movemouse":
+	case "getMouseCoords":
+		return s.mouseCoords()
+	case "moveMouse":
 		return handle(data, s.moveMouse)
 	}
 
@@ -95,6 +97,12 @@ func (s *Server) proxy(u string) (any, error) {
 	s.mu.Unlock()
 
 	return nil, nil
+}
+
+func (s *Server) mouseCoords() (any, error) {
+	x, y := robotgo.Location()
+
+	return [2]int{x, y}, nil
 }
 
 func (s *Server) moveMouse(mi [2]int) (any, error) {
