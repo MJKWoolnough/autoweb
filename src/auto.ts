@@ -3,7 +3,7 @@ import ready from './lib/load.js';
 import {queue} from './lib/misc.js';
 import {RPC} from './lib/rpc.js';
 
-type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight";
+export type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight";
 
 queue(() => ready);
 
