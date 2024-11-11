@@ -10,7 +10,8 @@ let windowX = 0, windowY = 0;
 const f = fetch,
       rpc = new RPC(),
       control = Object.freeze({
-	      "moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0]) ?? Promise.reject)
+	      "moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
+	      "clickMouse": (button?: "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight") => queue(() => rpc.request("clickMouse", button === "centre" || button === "middle" ? "center" : button ?? "left"))
       });
 
 window.WebSocket = class extends WebSocket{};
