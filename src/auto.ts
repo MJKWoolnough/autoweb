@@ -16,7 +16,8 @@ const f = fetch,
 	      "moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
 	      "clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", fixButton(button))),
 	      "dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", fixButton(button))),
-	      "mouseDown": (button?: MouseButton) => queue(() => rpc.request("mouseDown", fixButton(button)))
+	      "mouseDown": (button?: MouseButton) => queue(() => rpc.request("mouseDown", fixButton(button))),
+	      "mouseUp": (button?: MouseButton) => queue(() => rpc.request("mouseUp", fixButton(button)))
       });
 
 window.WebSocket = class extends WebSocket{};

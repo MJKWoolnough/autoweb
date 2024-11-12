@@ -5,6 +5,7 @@ export interface Control {
 	clickMouse: (button?: MouseButton) => Promise<void>;
 	dblClickMouse: (button?: MouseButton) => Promise<void>;
 	mouseDown: (button?: MouseButton) => Promise<void>;
+	mouseUp: (button?: MouseButton) => Promise<void>;
 }
 
 declare const _default: (url: string, fn: (c: Control) => Promise<void>) => Promise<void>;
