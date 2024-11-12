@@ -144,9 +144,7 @@ func (s *Server) mouseDown(button string) (any, error) {
 		return nil, ErrUnknownMouseButton
 	}
 
-	robotgo.MouseDown(button, true)
-
-	return nil, nil
+	return nil, robotgo.MouseDown(button)
 }
 
 func (s *Server) mouseUp(button string) (any, error) {
@@ -154,9 +152,7 @@ func (s *Server) mouseUp(button string) (any, error) {
 		return nil, ErrUnknownMouseButton
 	}
 
-	robotgo.MouseUp(button, true)
-
-	return nil, nil
+	return nil, robotgo.MouseUp(button)
 }
 
 var (
