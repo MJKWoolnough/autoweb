@@ -83,6 +83,8 @@ func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 		return handle(data, s.keyPress)
 	case "keyDown":
 		return handle(data, s.keyDown)
+	case "keyUp":
+		return handle(data, s.keyUp)
 	}
 
 	return nil, ErrUnknownEndpoint
@@ -165,6 +167,10 @@ func (s *Server) keyPress(key string) (any, error) {
 
 func (s *Server) keyDown(key string) (any, error) {
 	return nil, robotgo.KeyDown(key)
+}
+
+func (s *Server) keyUp(key string) (any, error) {
+	return nil, robotgo.KeyUp(key)
 }
 
 var (

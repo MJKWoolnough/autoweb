@@ -8,6 +8,7 @@ export interface Control {
 	mouseUp: (button?: MouseButton) => Promise<void>;
 	keyPress: (key: string) => Promise<void>;
 	keyDown: (key: string) => Promise<void>;
+	keyUp: (key: string) => Promise<void>;
 }
 
 declare const _default: (url: string, fn: (c: Control) => Promise<void>) => Promise<void>;
