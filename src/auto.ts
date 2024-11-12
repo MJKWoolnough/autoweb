@@ -11,10 +11,12 @@ let windowX = 0, windowY = 0;
 
 const f = fetch,
       rpc = new RPC(),
+      fixButton = (button?: MouseButton) => button === "centre" || button === "middle" ? "center" : button ?? "left",
       control = Object.freeze({
 	      "moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
-	      "clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", button === "centre" || button === "middle" ? "center" : button ?? "left")),
-	      "dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", button === "centre" || button === "middle" ? "center" : button ?? "left"))
+	      "clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", fixButton(button))),
+	      "dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", fixButton(button))),
+	      "mouseDown": (button?: MouseButton) => queue(() => rpc.request("mouseDown", fixButton(button)))
       });
 
 window.WebSocket = class extends WebSocket{};
