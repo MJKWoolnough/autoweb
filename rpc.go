@@ -17,6 +17,7 @@ type Server struct {
 	handler http.Handler
 	mux     http.ServeMux
 	rproxy  atomic.Pointer[httputil.ReverseProxy]
+	rpc     atomic.Pointer[jsonrpc.Server]
 }
 
 func newServer(source string) *Server {
@@ -28,18 +29,16 @@ func newServer(source string) *Server {
 	mux.Handle("/auto.js", serveContents(codeJS))
 	mux.Handle("/script.js", serveContents(source))
 
-	var singleConnection uint32
-
 	mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
 		srv := jsonrpc.New(conn, s)
-		if !atomic.CompareAndSwapUint32(&singleConnection, 0, 1) {
+		if !s.rpc.CompareAndSwap(srv, nil) {
 			srv.Send(ErrSingleConnection)
 
 			return
 		}
 
 		srv.Handle()
-		atomic.StoreUint32(&singleConnection, 0)
+		s.rpc.Store(nil)
 		s.rproxy.Store(nil)
 	}))
 
