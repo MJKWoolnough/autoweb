@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"sync"
 	"sync/atomic"
 
 	"github.com/go-vgo/robotgo"
@@ -15,10 +14,9 @@ import (
 )
 
 type Server struct {
-	mu      sync.RWMutex
 	handler http.Handler
 	mux     http.ServeMux
-	rproxy  *httputil.ReverseProxy
+	rproxy  atomic.Pointer[httputil.ReverseProxy]
 }
 
 func newServer(source string) *Server {
@@ -42,8 +40,7 @@ func newServer(source string) *Server {
 
 		srv.Handle()
 		atomic.StoreUint32(&singleConnection, 0)
-
-		s.rproxy = nil
+		s.rproxy.Store(nil)
 	}))
 
 	return s
@@ -52,9 +49,7 @@ func newServer(source string) *Server {
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var h http.Handler = &s.mux
 
-	s.mu.RLock()
-	p := s.rproxy
-	s.mu.RUnlock()
+	p := s.rproxy.Load()
 
 	if p != nil {
 		h = p
@@ -106,9 +101,7 @@ func (s *Server) proxy(u string) (any, error) {
 		return nil, err
 	}
 
-	s.mu.Lock()
-	s.rproxy = httputil.NewSingleHostReverseProxy(rp)
-	s.mu.Unlock()
+	s.rproxy.Store(httputil.NewSingleHostReverseProxy(rp))
 
 	return nil, nil
 }
