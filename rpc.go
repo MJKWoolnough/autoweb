@@ -28,7 +28,6 @@ func newServer(source string) *Server {
 	mux.Handle("/", serveContents(indexHTML))
 	mux.Handle("/auto.js", serveContents(codeJS))
 	mux.Handle("/script.js", serveContents(source))
-
 	mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
 		srv := jsonrpc.New(conn, s)
 		if !s.rpc.CompareAndSwap(srv, nil) {
