@@ -27,7 +27,8 @@ const f = fetch,
 	"mouseUp": (button?: MouseButton) => queue(() => rpc.request("mouseUp", fixButton(button))),
 	"keyPress": (key: string) => queue(() => rpc.request("keyPress", key)),
 	"keyDown": (key: string) => queue(() => rpc.request("keyDown", key)),
-	"keyUp": (key: string) => queue(() => rpc.request("keyUp", key))
+	"keyUp": (key: string) => queue(() => rpc.request("keyUp", key)),
+	"delay": (milli: number) => new Promise(fn => setTimeout(fn, milli))
       });
 
 window.WebSocket = class extends WebSocket{};

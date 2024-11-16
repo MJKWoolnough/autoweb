@@ -10,6 +10,7 @@ export interface Control {
 	keyPress: (key: string) => Promise<void>;
 	keyDown: (key: string) => Promise<void>;
 	keyUp: (key: string) => Promise<void>;
+	delay: (milli: number) => Promise<void>;
 }
 
 declare const _default: (url: string, fn: (c: Control) => Promise<void>) => Promise<void>;
