@@ -1,17 +1,35 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync/atomic"
 
 	"github.com/go-vgo/robotgo"
 	"golang.org/x/net/websocket"
 	"vimagination.zapto.org/jsonrpc"
 )
+
+var (
+	//go:embed index.html
+	indexHTML string
+
+	//go:embed auto.js
+	codeJS string
+)
+
+type serveContents string
+
+func (s serveContents) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.URL.Path)
+	http.ServeContent(w, r, r.URL.Path, now, strings.NewReader(string(s)))
+}
 
 type Server struct {
 	handler http.Handler

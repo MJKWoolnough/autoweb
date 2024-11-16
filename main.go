@@ -1,7 +1,6 @@
 package main
 
 import (
-	_ "embed"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"strings"
 	"time"
 
 	"vimagination.zapto.org/javascript"
@@ -25,21 +23,7 @@ func main() {
 	}
 }
 
-var (
-	//go:embed index.html
-	indexHTML string
-
-	//go:embed auto.js
-	codeJS string
-
-	now = time.Now()
-)
-
-type serveContents string
-
-func (s serveContents) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	http.ServeContent(w, r, r.URL.Path, now, strings.NewReader(string(s)))
-}
+var now = time.Now()
 
 type Browser []string
 
