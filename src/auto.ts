@@ -14,7 +14,7 @@ const f = fetch,
       originalPage = Array.from(document.documentElement.children),
       fixButton = (button?: MouseButton) => button === "centre" || button === "middle" ? "center" : button ?? "left",
       control = Object.freeze({
-	"load": (path: string) => HTTPRequest(path).then(x => {
+	"load": (path: string) => HTTPRequest(path, {"headers": {"Cache-Control": "no-cache, no-store, max-age=0"}}).then(x => {
 		document.documentElement.innerHTML = x;
 	}),
 	"moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
