@@ -13,10 +13,13 @@ const f = fetch,
       rpc = new RPC(),
       originalPage = Array.from(document.documentElement.children),
       fixButton = (button?: MouseButton) => button === "centre" || button === "middle" ? "center" : button ?? "left",
-      control = Object.freeze({
-	"load": (path: string) => HTTPRequest(path, {"headers": {"Cache-Control": "no-cache, no-store, max-age=0"}}).then(x => {
+      load = (path: string) => HTTPRequest(path, {"headers": {"Cache-Control": "no-cache, no-store, max-age=0"}}).then(x => {
+		history.pushState(+new Date(), "", new URL(path, window.location + ""))
+
 		document.documentElement.innerHTML = x;
-	}),
+      }),
+      control = Object.freeze({
+	load,
 	"moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
 	"clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", fixButton(button))),
 	"dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", fixButton(button))),
@@ -31,6 +34,23 @@ window.WebSocket = class extends WebSocket{};
 window.XMLHttpRequest = class extends XMLHttpRequest{};
 window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => f(input, init);
 
+window.addEventListener("click", (e: Event) => {
+	let target = e.target as Element | null;
+
+	while (target && !(target instanceof HTMLAnchorElement || target instanceof HTMLAreaElement || target instanceof SVGAElement)) {
+		target = target.parentNode as Element;
+	}
+
+	const href = target?.getAttribute("href"),
+	      url = href ? new URL(href, window.location + "") : null;
+
+	if (url?.host === window.location.host) {
+		load(href ?? "");
+
+		e.preventDefault();
+	}
+});
+
 export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 	return queue(() => WS("/socket").then(ws => {
 		rpc.reconnect(ws);
@@ -41,6 +61,7 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 		.finally(() => {
 			rpc?.close();
 
+			history.pushState(+new Date(), "", new URL("/", window.location + ""));
 			document.documentElement.replaceChildren(...originalPage);
 		});
 	}));
