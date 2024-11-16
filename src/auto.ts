@@ -11,6 +11,7 @@ let windowX = 0, windowY = 0;
 
 const f = fetch,
       rpc = new RPC(),
+      originalPage = Array.from(document.documentElement.children),
       fixButton = (button?: MouseButton) => button === "centre" || button === "middle" ? "center" : button ?? "left",
       control = Object.freeze({
 	"load": (path: string) => HTTPRequest(path).then(x => {
@@ -37,6 +38,10 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 		return rpc.request("proxy", url)
 		.then(() => fn(control))
 		.catch(e => console.log(e))
-		.finally(() => rpc?.close());
+		.finally(() => {
+			rpc?.close();
+
+			document.documentElement.replaceChildren(...originalPage);
+		});
 	}));
 }
