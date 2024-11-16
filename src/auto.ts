@@ -1,4 +1,4 @@
-import {WS} from './lib/conn.js';
+import {WS, HTTPRequest} from './lib/conn.js';
 import ready from './lib/load.js';
 import {queue} from './lib/misc.js';
 import {RPC} from './lib/rpc.js';
@@ -13,14 +13,17 @@ const f = fetch,
       rpc = new RPC(),
       fixButton = (button?: MouseButton) => button === "centre" || button === "middle" ? "center" : button ?? "left",
       control = Object.freeze({
-	      "moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
-	      "clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", fixButton(button))),
-	      "dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", fixButton(button))),
-	      "mouseDown": (button?: MouseButton) => queue(() => rpc.request("mouseDown", fixButton(button))),
-	      "mouseUp": (button?: MouseButton) => queue(() => rpc.request("mouseUp", fixButton(button))),
-	      "keyPress": (key: string) => queue(() => rpc.request("keyPress", key)),
-	      "keyDown": (key: string) => queue(() => rpc.request("keyDown", key)),
-	      "keyUp": (key: string) => queue(() => rpc.request("keyUp", key))
+	"load": (path: string) => HTTPRequest(path).then(x => {
+		document.documentElement.innerHTML = x;
+	}),
+	"moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
+	"clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", fixButton(button))),
+	"dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", fixButton(button))),
+	"mouseDown": (button?: MouseButton) => queue(() => rpc.request("mouseDown", fixButton(button))),
+	"mouseUp": (button?: MouseButton) => queue(() => rpc.request("mouseUp", fixButton(button))),
+	"keyPress": (key: string) => queue(() => rpc.request("keyPress", key)),
+	"keyDown": (key: string) => queue(() => rpc.request("keyDown", key)),
+	"keyUp": (key: string) => queue(() => rpc.request("keyUp", key))
       });
 
 window.WebSocket = class extends WebSocket{};

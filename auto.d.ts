@@ -1,6 +1,7 @@
 export type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight";
 
 export interface Control {
+	load: (path: string) => Promise<void>;
 	moveMouse: (x: number, y: number) => Promise<void>;
 	clickMouse: (button?: MouseButton) => Promise<void>;
 	dblClickMouse: (button?: MouseButton) => Promise<void>;
