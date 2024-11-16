@@ -44,7 +44,7 @@ func newServer(source string) *Server {
 	s.mux.Handle("/script.js", serveContents(source))
 	s.mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
 		srv := jsonrpc.New(conn, s)
-		if !s.rpc.CompareAndSwap(srv, nil) {
+		if s.rpc.CompareAndSwap(srv, nil) {
 			srv.Send(ErrSingleConnection)
 
 			return
