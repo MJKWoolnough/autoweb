@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -27,7 +26,6 @@ var (
 type serveContents string
 
 func (s serveContents) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Path)
 	http.ServeContent(w, r, r.URL.Path, now, strings.NewReader(string(s)))
 }
 
@@ -39,14 +37,12 @@ type Server struct {
 }
 
 func newServer(source string) *Server {
-	var mux http.ServeMux
-
 	s := new(Server)
 
-	mux.Handle("/", serveContents(indexHTML))
-	mux.Handle("/auto.js", serveContents(codeJS))
-	mux.Handle("/script.js", serveContents(source))
-	mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
+	s.mux.Handle("/", serveContents(indexHTML))
+	s.mux.Handle("/auto.js", serveContents(codeJS))
+	s.mux.Handle("/script.js", serveContents(source))
+	s.mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
 		srv := jsonrpc.New(conn, s)
 		if !s.rpc.CompareAndSwap(srv, nil) {
 			srv.Send(ErrSingleConnection)
