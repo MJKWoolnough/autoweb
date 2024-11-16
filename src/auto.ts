@@ -36,6 +36,7 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 
 		return rpc.request("proxy", url)
 		.then(() => fn(control))
+		.catch(e => console.log(e))
 		.finally(() => rpc?.close());
 	}));
 }
