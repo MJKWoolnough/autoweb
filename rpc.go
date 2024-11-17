@@ -76,6 +76,8 @@ func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 		return handle(data, s.proxy)
 	case "getMouseCoords":
 		return s.mouseCoords()
+	case "jumpMouse":
+		return handle(data, s.jumpMouse)
 	case "moveMouse":
 		return handle(data, s.moveMouse)
 	case "clickMouse":
@@ -124,8 +126,14 @@ func (s *Server) mouseCoords() (any, error) {
 	return [2]int{x, y}, nil
 }
 
-func (s *Server) moveMouse(mi [2]int) (any, error) {
+func (s *Server) jumpMouse(mi [2]int) (any, error) {
 	robotgo.Move(mi[0], mi[1])
+
+	return nil, nil
+}
+
+func (s *Server) moveMouse(mi [2]int) (any, error) {
+	robotgo.MoveSmooth(mi[0], mi[1])
 
 	return nil, nil
 }

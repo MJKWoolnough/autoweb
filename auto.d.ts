@@ -2,6 +2,7 @@ export type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "w
 
 export interface Control {
 	load: (path: string) => Promise<void>;
+	jumpMouse: (x: number, y: number) => Promise<void>;
 	moveMouse: (x: number, y: number) => Promise<void>;
 	clickMouse: (button?: MouseButton) => Promise<void>;
 	dblClickMouse: (button?: MouseButton) => Promise<void>;

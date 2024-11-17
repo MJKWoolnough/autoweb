@@ -20,6 +20,7 @@ const f = fetch,
       }),
       control = Object.freeze({
 	load,
+	"jumpMouse": (x: number, y: number) => queue(() => rpc.request("jumpMouse", [windowX + x|0, windowY + y|0])),
 	"moveMouse": (x: number, y: number) => queue(() => rpc.request("moveMouse", [windowX + x|0, windowY + y|0])),
 	"clickMouse": (button?: MouseButton) => queue(() => rpc.request("clickMouse", fixButton(button))),
 	"dblClickMouse": (button?: MouseButton) => queue(() => rpc.request("dblClickMouse", fixButton(button))),
@@ -53,17 +54,14 @@ window.addEventListener("click", (e: Event) => {
 });
 
 export default (url: string, fn: (c: typeof control) => Promise<void>) => {
-	return queue(() => WS("/socket").then(ws => {
-		rpc.reconnect(ws);
+	return queue(() => WS("/socket").then(ws => rpc.reconnect(ws)))
+	.then(() => rpc.request("proxy", url))
+	.then(() => fn(control))
+	.catch(e => console.log(e))
+	.finally(() => {
+		rpc?.close();
 
-		return rpc.request("proxy", url)
-		.then(() => fn(control))
-		.catch(e => console.log(e))
-		.finally(() => {
-			rpc?.close();
-
-			history.pushState(+new Date(), "", new URL("/", window.location + ""));
-			document.documentElement.replaceChildren(...originalPage);
-		});
-	}));
+		history.pushState(+new Date(), "", new URL("/", window.location + ""));
+		document.documentElement.replaceChildren(...originalPage);
+	});
 }
