@@ -62,6 +62,54 @@ window.addEventListener("click", (e: Event) => {
 
 export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 	return queue(() => WS("/socket").then(ws => rpc.reconnect(ws)))
+	.then(async () => {
+		windowX = windowY = 0;
+
+		let found: [number, number] | null = null,
+		    x = -(window.innerWidth >> 1), y = window.innerHeight >> 1;
+
+		const div = document.createElement("div"),
+		      [screenW, screenH] = await rpc.request<[number, number]>("getScreenSize");
+
+		div.setAttribute("style", "position: absolute; top: 0; left: 0; right: 0; bottom: 0");
+
+		document.body.replaceChildren(div);
+
+		await control.waitForAnimationFrame();
+
+		div.addEventListener("mouseenter", e => {
+			found = [e.clientX, e.clientY]
+
+			div.remove();
+
+			e.preventDefault();
+		}, {"once": true, "capture": true});
+
+		do {
+			x += window.innerWidth;
+
+			if (x > screenW) {
+				x = window.innerWidth >> 1;
+				y += window.innerHeight;
+
+				if (y > screenH) {
+					alert("Could not find window.")
+
+					div.remove();
+
+					return Promise.reject("unable to find window");
+				}
+			}
+
+			await control.jumpMouse(x, y);
+			await control.delay(50);
+		} while (!found);
+
+		windowX = x - found[0] | 0;
+		windowY = y - found[1] | 0;
+
+		return control.jumpMouse(window.innerWidth >> 1, window.innerHeight >> 1);
+	})
 	.then(() => rpc.request("proxy", url))
 	.then(() => fn(control))
 	.catch(e => console.log(e))
