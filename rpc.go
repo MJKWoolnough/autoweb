@@ -45,7 +45,7 @@ func newServer(source string) *Server {
 	s.mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
 		srv := jsonrpc.New(conn, s)
 		if s.rpc.CompareAndSwap(srv, nil) {
-			srv.Send(ErrSingleConnection)
+			srv.SendData(ErrSingleConnection)
 
 			return
 		}
@@ -197,10 +197,5 @@ func (s *Server) keyUp(key string) (any, error) {
 var (
 	ErrUnknownEndpoint    = errors.New("unknown endpoint")
 	ErrUnknownMouseButton = errors.New("unknown mouse button")
-	ErrSingleConnection   = jsonrpc.Response{
-		ID: -999,
-		Error: &jsonrpc.Error{
-			Message: "only a single connection is allowed",
-		},
-	}
+	ErrSingleConnection   = json.RawMessage(`{"id":-999,"error":{"message":"only a single connection is allowed"}}`)
 )
