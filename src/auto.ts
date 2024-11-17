@@ -29,7 +29,14 @@ const f = fetch,
 	"keyPress": (key: string) => queue(() => rpc.request("keyPress", key)),
 	"keyDown": (key: string) => queue(() => rpc.request("keyDown", key)),
 	"keyUp": (key: string) => queue(() => rpc.request("keyUp", key)),
-	"delay": (milli: number) => new Promise(fn => setTimeout(fn, milli))
+	"delay": (milli: number) => new Promise(fn => setTimeout(fn, milli)),
+	"waitForAnimationFrame": () => {
+		const {promise, resolve} = Promise.withResolvers();
+
+		requestAnimationFrame(resolve);
+
+		return promise;
+	}
       });
 
 window.WebSocket = class extends WebSocket{};
