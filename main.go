@@ -88,7 +88,7 @@ func run() error {
 	signal.Notify(c, os.Interrupt)
 	defer signal.Reset(os.Interrupt)
 
-	cmd := browser.Launch(fmt.Sprintf("http://%s", l.Addr()))
+	cmd := browser.Launch("http://" + l.Addr().String())
 	if err := cmd.Start(); err != nil {
 		return err
 	}
