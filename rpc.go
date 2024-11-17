@@ -72,6 +72,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 	switch method {
+	case "getScreenSize":
+		return s.getScreenSize()
 	case "proxy":
 		return handle(data, s.proxy)
 	case "getMouseCoords":
@@ -107,6 +109,12 @@ func handle[T any](data json.RawMessage, fn func(data T) (any, error)) (any, err
 	}
 
 	return fn(v)
+}
+
+func (s *Server) getScreenSize() ([2]int, error) {
+	x, y := robotgo.GetScreenSize()
+
+	return [2]int{x, y}, nil
 }
 
 func (s *Server) proxy(u string) (any, error) {
