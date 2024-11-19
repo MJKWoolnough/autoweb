@@ -1,4 +1,4 @@
-import {WS, HTTPRequest} from './lib/conn.js';
+import {HTTPRequest, WS} from './lib/conn.js';
 import ready from './lib/load.js';
 import {queue} from './lib/misc.js';
 import {RPC} from './lib/rpc.js';
