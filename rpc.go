@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/go-vgo/robotgo"
@@ -34,6 +35,9 @@ type Server struct {
 	mux     http.ServeMux
 	rproxy  atomic.Pointer[httputil.ReverseProxy]
 	rpc     atomic.Pointer[jsonrpc.Server]
+
+	mu    sync.RWMutex
+	hooks map[string]struct{}
 }
 
 func newServer(source string) *Server {
@@ -50,6 +54,7 @@ func newServer(source string) *Server {
 			return
 		}
 
+		s.hooks = make(map[string]struct{})
 		srv.Handle()
 		s.rpc.Store(nil)
 		s.rproxy.Store(nil)
@@ -76,6 +81,10 @@ func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
 		return s.getScreenSize()
 	case "proxy":
 		return handle(data, s.proxy)
+	case "addHook":
+		return handle(data, s.addHook)
+	case "removeHook":
+		return handle(data, s.addHook)
 	case "getMouseCoords":
 		return s.mouseCoords()
 	case "jumpMouse":
@@ -124,6 +133,22 @@ func (s *Server) proxy(u string) (any, error) {
 	}
 
 	s.rproxy.Store(httputil.NewSingleHostReverseProxy(rp))
+
+	return nil, nil
+}
+
+func (s *Server) addHook(path string) (any, error) {
+	s.mu.Lock()
+	s.hooks[path] = struct{}{}
+	s.mu.Unlock()
+
+	return nil, nil
+}
+
+func (s *Server) removeHook(path string) (any, error) {
+	s.mu.Lock()
+	delete(s.hooks, path)
+	s.mu.Unlock()
 
 	return nil, nil
 }
