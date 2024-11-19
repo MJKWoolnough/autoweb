@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"time"
 
 	"vimagination.zapto.org/javascript"
@@ -64,10 +66,22 @@ func run() error {
 
 	tk := parser.NewReaderTokeniser(f)
 
-	m, err := javascript.ParseModule(javascript.AsTypescript(&tk))
-	if err != nil {
-		return err
+	var sb strings.Builder
+
+	if strings.HasSuffix(script, ".ts") {
+		m, err := javascript.ParseModule(javascript.AsTypescript(&tk))
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprint(&sb, m)
+	} else {
+		if _, err := io.Copy(&sb, f); err != nil {
+			return err
+		}
 	}
+
+	f.Close()
 
 	l, err := net.ListenTCP("tcp", &net.TCPAddr{
 		IP:   net.IPv4(127, 0, 0, 1),
@@ -79,7 +93,7 @@ func run() error {
 
 	defer l.Close()
 
-	server := newServer(fmt.Sprintf("%s", m))
+	server := newServer(sb.String())
 
 	go http.Serve(l, server)
 
