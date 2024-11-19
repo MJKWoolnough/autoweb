@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -34,7 +35,7 @@ type Server struct {
 	handler http.Handler
 	mux     http.ServeMux
 	rproxy  atomic.Pointer[httputil.ReverseProxy]
-	rpc     atomic.Pointer[jsonrpc.Server]
+	rpc     atomic.Pointer[jsonrpc.ClientServer]
 
 	mu    sync.RWMutex
 	hooks map[string]struct{}
@@ -47,7 +48,7 @@ func newServer(source string) *Server {
 	s.mux.Handle("/auto.js", serveContents(codeJS))
 	s.mux.Handle("/script.js", serveContents(source))
 	s.mux.Handle("/socket", websocket.Handler(func(conn *websocket.Conn) {
-		srv := jsonrpc.New(conn, s)
+		srv := jsonrpc.NewClientServer(conn, s)
 		if s.rpc.CompareAndSwap(srv, nil) {
 			srv.SendData(ErrSingleConnection)
 
@@ -64,15 +65,56 @@ func newServer(source string) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var h http.Handler = &s.mux
-
 	p := s.rproxy.Load()
 
 	if p != nil {
-		h = p
+		s.handleHooks(w, r, p)
+	} else {
+		s.mux.ServeHTTP(w, r)
+	}
+}
+
+type hookResponse struct {
+	Code    int         `json:"code"`
+	Headers http.Header `json:"headers"`
+	Body    string      `json:"body"`
+}
+
+func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil.ReverseProxy) {
+	s.mu.RLock()
+	_, ok := s.hooks[r.URL.Path]
+	s.mu.RUnlock()
+
+	if ok {
+		rpc := s.rpc.Load()
+
+		if rpc == nil {
+			http.Error(w, "invalid state", http.StatusInternalServerError)
+
+			return
+		}
+
+		resp := new(hookResponse)
+
+		if err := rpc.RequestValue(r.URL.Path, nil, &resp); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+
+			return
+		}
+
+		if resp != nil {
+			for key, value := range resp.Headers {
+				w.Header()[key] = value
+			}
+
+			w.WriteHeader(resp.Code)
+			io.WriteString(w, resp.Body)
+
+			return
+		}
 	}
 
-	h.ServeHTTP(w, r)
+	p.ServeHTTP(w, r)
 }
 
 func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
