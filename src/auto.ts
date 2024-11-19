@@ -5,6 +5,18 @@ import {RPC} from './lib/rpc.js';
 
 export type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight";
 
+export type Request = {
+	url: string;
+	headers: Record<string, string[]>;
+	body: string;
+}
+
+export type HookResponse = {
+	code: number;
+	headers: Record<string, string[] | string> | Map<string, string[] | string>;
+	body: string;
+}
+
 queue(() => ready);
 
 let windowX = 0, windowY = 0;
@@ -18,6 +30,7 @@ const f = fetch,
 
 		document.documentElement.innerHTML = x;
       }),
+      hooks = new Map<string, (req: Request) => HookResponse | null>(),
       control = Object.freeze({
 	load,
 	"jumpMouse": (x: number, y: number) => queue(() => rpc.request("jumpMouse", [windowX + x|0, windowY + y|0])),
@@ -36,6 +49,26 @@ const f = fetch,
 		requestAnimationFrame(resolve);
 
 		return promise;
+	},
+	"hook": (url: string, fn?: (req: Request) => HookResponse | null) => {
+		const afn =  fn ? (req: Request) => {
+			const resp = fn(req);
+
+			if (resp) {
+				resp.code ??= 200;
+				resp.headers = Object.fromEntries((resp?.headers instanceof Map ? resp.headers.entries() : Object.entries(resp.headers ?? {})).map(([key, v]) => [key, v instanceof Array ? v : [v]]));
+			}
+
+			return resp;
+		}: fn;
+
+		rpc.register(url, afn);
+
+		if (afn) {
+			rpc.request("addHook", url).then(() => hooks.set(url, afn));
+		} else {
+			rpc.request("removeHook", url).then(() => hooks.delete(url));
+		}
 	}
       });
 
