@@ -111,7 +111,7 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 		await control.waitForAnimationFrame();
 
 		div.addEventListener("mouseenter", e => {
-			found = [e.clientX, e.clientY]
+			found = [e.clientX, e.clientY];
 
 			div.remove();
 
@@ -126,7 +126,7 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 				y += window.innerHeight;
 
 				if (y > screenH) {
-					alert("Could not find window.")
+					alert("Could not find window.");
 
 					div.remove();
 
