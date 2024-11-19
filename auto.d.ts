@@ -1,5 +1,17 @@
 export type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "wheelDown" | "wheelUp" | "wheelLeft" | "wheelRight";
 
+export type Request = {
+	url: string;
+	headers: Record<string, string[]>;
+	body: string;
+}
+
+export type HookResponse = {
+	code: number;
+	headers: Record<string, string[] | string> | Map<string, string[] | string>;
+	body: string;
+}
+
 export interface Control {
 	load: (path: string) => Promise<void>;
 	jumpMouse: (x: number, y: number) => Promise<void>;
@@ -13,6 +25,7 @@ export interface Control {
 	keyUp: (key: string) => Promise<void>;
 	delay: (milli: number) => Promise<void>;
 	waitForAnimationFrame: () => Promise<void>;
+	hook: (url: string, fn?: (req: Request) => HookResponse | null) => Promise<void>;
 }
 
 declare const _default: (url: string, fn: (c: Control) => Promise<void>) => Promise<void>;
