@@ -74,6 +74,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type hookRequest struct {
+	URL     string      `json:"url"`
+	Method  string      `json:"method"`
+	Headers http.Header `json:"headers"`
+	Body    string      `json:"body"`
+}
+
 type hookResponse struct {
 	Code    int         `json:"code"`
 	Headers http.Header `json:"headers"`
@@ -94,9 +101,36 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil
 			return
 		}
 
+		req := hookRequest{
+			URL:     r.URL.String(),
+			Method:  r.Method,
+			Headers: r.Header,
+		}
+
+		if r.Body != nil {
+			var sb strings.Builder
+
+			if r.ContentLength > 0 {
+				sb.Grow(int(r.ContentLength))
+			}
+
+			_, err := io.Copy(&sb, r.Body)
+			r.Body.Close()
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+
+				return
+			}
+
+			req.Body = sb.String()
+
+			r.Body = io.NopCloser(strings.NewReader(req.Body))
+		}
+
 		resp := new(hookResponse)
 
-		if err := rpc.RequestValue(r.URL.Path, nil, &resp); err != nil {
+		if err := rpc.RequestValue(r.URL.Path, req, &resp); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			return
