@@ -4,7 +4,7 @@ export type Request = {
 	url: string;
 	method: string;
 	headers: Record<string, string[]>;
-	body: string;
+	body: BodyInit | null | undefined;
 }
 
 export type HookResponse = {
