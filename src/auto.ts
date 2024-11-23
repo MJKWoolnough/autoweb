@@ -71,11 +71,34 @@ const f = fetch,
 			rpc.request("removeHook", url).then(() => hooks.delete(url));
 		}
 	}
-      });
+      }),
+      mirror = {"X-MIRROR": ""};
 
 window.WebSocket = class extends WebSocket{};
 window.XMLHttpRequest = class extends XMLHttpRequest{};
-window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => f(input, init);
+window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+	const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
+	      hook = hooks.get(url);
+
+	if (hook) {
+		const resp = hook({
+			url,
+			"method": typeof input === "string" || input instanceof URL ? init?.method ?? "get" : input.method,
+			"headers": {},
+			"body": init?.body
+		      });
+
+		if (resp) {
+			return f("/", {
+				"headers": mirror,
+				"body": JSON.stringify(resp?.body ?? "")
+			})
+			.then(r => Object.defineProperty(r, "url", {"value": url, writable: false}));
+		}
+	}
+
+	return f(input, init)
+};
 
 window.addEventListener("click", (e: Event) => {
 	let target = e.target as Element | null;
