@@ -7,6 +7,7 @@ export type MouseButton = "left" | "right" | "center" | "centre" | "middle" | "w
 
 export type Request = {
 	url: string;
+	method: string;
 	headers: Record<string, string[]>;
 	body: string;
 }
