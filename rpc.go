@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"maps"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -172,23 +171,6 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil
 	}
 
 	p.ServeHTTP(w, r)
-}
-
-func mirror(w http.ResponseWriter, r *http.Request) {
-	resp := hookResponse{Code: http.StatusOK}
-
-	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-
-		return
-	}
-
-	maps.Copy(w.Header(), resp.Headers)
-	w.WriteHeader(resp.Code)
-
-	if resp.Body != "" {
-		io.WriteString(w, resp.Body)
-	}
 }
 
 func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
