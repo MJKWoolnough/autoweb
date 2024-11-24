@@ -79,11 +79,11 @@ window.XMLHttpRequest = class extends XMLHttpRequest {
 	#hookURL = "";
 
 	open(method: string, url: string | URL, async = true, username?: string | null, password?: string | null) {
-		const u = url instanceof URL ? url : new URL(url, window.location+"");
+		const u = (url instanceof URL ? url : new URL(url, window.location+"")).toString();
 
-		if (hooks.has(u.toString())) {
+		if (hooks.has(u)) {
 			url = "/";
-			this.#hookURL = u.toString();
+			this.#hookURL = u;
 		}
 
 		super.open(method, url, async, username, password);
@@ -99,9 +99,9 @@ window.XMLHttpRequest = class extends XMLHttpRequest {
 };
 
 window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-	const url = input instanceof URL ? input : new URL(input instanceof Request ? input.url : input, window.location + "");
+	const url = (input instanceof URL ? input : new URL(input instanceof Request ? input.url : input, window.location + "")).toString();
 
-	if (hooks.has(url.toString())) {
+	if (hooks.has(url)) {
 		input = new Request("/", input instanceof Request ? input : undefined);
 
 		if (init) {
@@ -109,7 +109,7 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response>
 			init = undefined;
 		}
 
-		input.headers.set("X-HOOK", url.toString());
+		input.headers.set("X-HOOK", url);
 	}
 
 	return f(input, init);
