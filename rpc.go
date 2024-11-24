@@ -89,14 +89,15 @@ type hookResponse struct {
 }
 
 func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil.ReverseProxy) {
-	if r.Header.Get("X-MIRROR") != "" {
-		mirror(w, r)
-
-		return
+	if u := r.Header.Get("X-HOOK"); u != "" {
+		up, err := url.Parse(u)
+		if err == nil {
+			r.URL = up
+		}
 	}
 
 	s.mu.RLock()
-	_, ok := s.hooks[r.URL.Path]
+	_, ok := s.hooks[r.URL.String()]
 	s.mu.RUnlock()
 
 	if ok {
@@ -137,7 +138,7 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil
 
 		resp := new(hookResponse)
 
-		if err := rpc.RequestValue(r.URL.Path, req, &resp); err != nil {
+		if err := rpc.RequestValue(r.URL.String(), req, &resp); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			return
