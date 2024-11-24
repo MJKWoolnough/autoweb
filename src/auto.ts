@@ -61,7 +61,7 @@ const f = fetch,
 			}
 
 			return resp;
-		}: fn;
+		      }: fn;
 
 		rpc.register(url, afn);
 
