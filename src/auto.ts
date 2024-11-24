@@ -74,7 +74,30 @@ const f = fetch,
       });
 
 window.WebSocket = class extends WebSocket{};
-window.XMLHttpRequest = class extends XMLHttpRequest{};
+
+window.XMLHttpRequest = class extends XMLHttpRequest {
+	#hookURL = "";
+
+	open(method: string, url: string | URL, async = true, username?: string | null, password?: string | null) {
+		const u = url instanceof URL ? url : new URL(url, window.location+"");
+
+		if (hooks.has(u.toString())) {
+			url = "/";
+			this.#hookURL = u.toString();
+		}
+
+		super.open(method, url, async, username, password);
+	}
+
+	send(body?: Document | XMLHttpRequestBodyInit | null) {
+		if (this.#hookURL) {
+			this.setRequestHeader("X-HOOK", this.#hookURL);
+		}
+
+		super.send(body);
+	}
+};
+
 window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
 	const url = input instanceof URL ? input : new URL(input instanceof Request ? input.url : input, window.location + "");
 
