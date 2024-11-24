@@ -98,7 +98,7 @@ window.XMLHttpRequest = class extends XMLHttpRequest {
 	}
 };
 
-window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
 	const url = (input instanceof URL ? input : new URL(input instanceof Request ? input.url : input, window.location + "")).toString();
 
 	if (hooks.has(url)) {
