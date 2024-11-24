@@ -96,11 +96,26 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil
 		}
 	}
 
+	var hookURL string
+
+	matches := [...]string{
+		r.URL.String(),
+		r.URL.RequestURI(),
+		r.URL.Path + "?" + r.URL.Query().Encode(),
+		r.URL.Path,
+	}
+
 	s.mu.RLock()
-	_, ok := s.hooks[r.URL.String()]
+	for _, u := range matches {
+		if _, ok := s.hooks[u]; ok {
+			hookURL = u
+
+			break
+		}
+	}
 	s.mu.RUnlock()
 
-	if ok {
+	if hookURL != "" {
 		rpc := s.rpc.Load()
 
 		if rpc == nil {
@@ -138,7 +153,7 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil
 
 		resp := new(hookResponse)
 
-		if err := rpc.RequestValue(r.URL.String(), req, &resp); err != nil {
+		if err := rpc.RequestValue(hookURL, req, &resp); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			return
