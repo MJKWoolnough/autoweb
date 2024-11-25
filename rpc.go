@@ -25,6 +25,11 @@ var (
 	codeJS string
 )
 
+type HTTPResponse struct {
+	Code    int
+	Message string
+}
+
 type serveContents string
 
 func (s serveContents) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -88,14 +93,28 @@ type hookResponse struct {
 }
 
 func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil.ReverseProxy) {
+	hookURL := s.getHookURL(r)
+
+	if hookURL != "" {
+		if resp := s.handleHook(w, r, hookURL); resp != nil {
+			w.WriteHeader(resp.Code)
+
+			io.WriteString(w, resp.Message)
+
+			return
+		}
+	}
+
+	p.ServeHTTP(w, r)
+}
+
+func (s *Server) getHookURL(r *http.Request) string {
 	if u := r.Header.Get("X-HOOK"); u != "" {
 		up, err := url.Parse(u)
 		if err == nil {
 			r.URL = up
 		}
 	}
-
-	var hookURL string
 
 	matches := [...]string{
 		r.URL.String(),
@@ -105,72 +124,73 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil
 	}
 
 	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	for _, u := range matches {
 		if _, ok := s.hooks[u]; ok {
-			hookURL = u
-
-			break
-		}
-	}
-	s.mu.RUnlock()
-
-	if hookURL != "" {
-		rpc := s.rpc.Load()
-
-		if rpc == nil {
-			http.Error(w, "invalid state", http.StatusInternalServerError)
-
-			return
-		}
-
-		req := hookRequest{
-			URL:     r.URL.String(),
-			Method:  r.Method,
-			Headers: r.Header,
-		}
-
-		if r.Body != nil {
-			var sb strings.Builder
-
-			if r.ContentLength > 0 {
-				sb.Grow(int(r.ContentLength))
-			}
-
-			_, err := io.Copy(&sb, r.Body)
-			r.Body.Close()
-
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-
-				return
-			}
-
-			req.Body = sb.String()
-
-			r.Body = io.NopCloser(strings.NewReader(req.Body))
-		}
-
-		resp := new(hookResponse)
-
-		if err := rpc.RequestValue(hookURL, req, &resp); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-
-			return
-		}
-
-		if resp != nil {
-			for key, value := range resp.Headers {
-				w.Header()[key] = value
-			}
-
-			w.WriteHeader(resp.Code)
-			io.WriteString(w, resp.Body)
-
-			return
+			return u
 		}
 	}
 
-	p.ServeHTTP(w, r)
+	return ""
+}
+
+func (s *Server) handleHook(w http.ResponseWriter, r *http.Request, hookURL string) *HTTPResponse {
+	rpc := s.rpc.Load()
+
+	if rpc == nil {
+		return &HTTPResponse{http.StatusInternalServerError, "invalid state"}
+	}
+
+	req, err := makeHookRequest(r)
+	if err != nil {
+		return err
+	}
+
+	resp := new(hookResponse)
+
+	if err := rpc.RequestValue(hookURL, req, &resp); err != nil {
+		return &HTTPResponse{http.StatusInternalServerError, err.Error()}
+	}
+
+	if resp != nil {
+		for key, value := range resp.Headers {
+			w.Header()[key] = value
+		}
+
+		return &HTTPResponse{resp.Code, resp.Body}
+	}
+
+	return nil
+}
+
+func makeHookRequest(r *http.Request) (hookRequest, *HTTPResponse) {
+	req := hookRequest{
+		URL:     r.URL.String(),
+		Method:  r.Method,
+		Headers: r.Header,
+	}
+
+	if r.Body != nil {
+		var sb strings.Builder
+
+		if r.ContentLength > 0 {
+			sb.Grow(int(r.ContentLength))
+		}
+
+		_, err := io.Copy(&sb, r.Body)
+		r.Body.Close()
+
+		if err != nil {
+			return req, &HTTPResponse{http.StatusBadRequest, err.Error()}
+		}
+
+		req.Body = sb.String()
+
+		r.Body = io.NopCloser(strings.NewReader(req.Body))
+	}
+
+	return req, nil
 }
 
 func (s *Server) HandleRPC(method string, data json.RawMessage) (any, error) {
