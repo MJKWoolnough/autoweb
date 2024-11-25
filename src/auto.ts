@@ -182,7 +182,7 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 	.then(() => fn(control))
 	.catch(e => console.log(e))
 	.finally(() => {
-		rpc?.close();
+		rpc.close();
 		history.pushState(+new Date(), "", new URL("/", window.location + ""));
 		document.documentElement.replaceChildren(...originalPage);
 	});
