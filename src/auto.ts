@@ -127,7 +127,6 @@ window.addEventListener("click", (e: Event) => {
 
 	if (url?.host === window.location.host) {
 		load(href ?? "");
-
 		e.preventDefault();
 	}
 });
@@ -144,7 +143,6 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 		      [screenW, screenH] = await rpc.request<[number, number]>("getScreenSize");
 
 		div.setAttribute("style", "position: absolute; top: 0; left: 0; right: 0; bottom: 0");
-
 		document.body.replaceChildren(div);
 
 		await control.waitForAnimationFrame();
@@ -153,7 +151,6 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 			found = [e.clientX, e.clientY];
 
 			div.remove();
-
 			e.preventDefault();
 		}, {"once": true, "capture": true});
 
@@ -166,7 +163,6 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 
 				if (y > screenH) {
 					alert("Could not find window.");
-
 					div.remove();
 
 					return Promise.reject("unable to find window");
@@ -187,7 +183,6 @@ export default (url: string, fn: (c: typeof control) => Promise<void>) => {
 	.catch(e => console.log(e))
 	.finally(() => {
 		rpc?.close();
-
 		history.pushState(+new Date(), "", new URL("/", window.location + ""));
 		document.documentElement.replaceChildren(...originalPage);
 	});
