@@ -110,7 +110,7 @@ window.WebSocket = class extends WebSocket{
 window.XMLHttpRequest = class extends XMLHttpRequest {
 	#hookURL = "";
 
-	open(method: string, url: string | URL, async = true, username?: string | null, password?: string | null) {
+	open(method: string, url: string | URL, asyncV = true, username?: string | null, password?: string | null) {
 		const u = (url instanceof URL ? url : new URL(url, window.location+"")).toString();
 
 		if (hooks.has(u)) {
@@ -118,7 +118,7 @@ window.XMLHttpRequest = class extends XMLHttpRequest {
 			this.#hookURL = u;
 		}
 
-		super.open(method, url, async, username, password);
+		super.open(method, url, asyncV, username, password);
 	}
 
 	send(body?: Document | XMLHttpRequestBodyInit | null) {
