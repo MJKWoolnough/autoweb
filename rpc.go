@@ -36,14 +36,20 @@ func (s serveContents) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, r.URL.Path, now, strings.NewReader(string(s)))
 }
 
+type wsconn struct {
+	conn *websocket.Conn
+	wg   sync.WaitGroup
+}
+
 type Server struct {
 	handler http.Handler
 	mux     http.ServeMux
 	rproxy  atomic.Pointer[httputil.ReverseProxy]
 	rpc     atomic.Pointer[jsonrpc.ClientServer]
 
-	mu    sync.RWMutex
-	hooks map[string]struct{}
+	mu      sync.RWMutex
+	hooks   map[string]struct{}
+	wsHooks map[string]*wsconn
 }
 
 func newServer(source string) *Server {
@@ -61,6 +67,7 @@ func newServer(source string) *Server {
 		}
 
 		s.hooks = make(map[string]struct{})
+		s.wsHooks = make(map[string]*wsconn)
 		srv.Handle()
 		s.rpc.Store(nil)
 		s.rproxy.Store(nil)
@@ -93,6 +100,12 @@ type hookResponse struct {
 }
 
 func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil.ReverseProxy) {
+	if wp := r.Header.Get("Sec-WebSocket-Protocol"); strings.HasPrefix(wp, "X-HOOK-WS:") {
+		s.handleHookedWS(w, r, wp)
+
+		return
+	}
+
 	hookURL := s.getHookURL(r)
 
 	if hookURL != "" {
@@ -106,6 +119,40 @@ func (s *Server) handleHooks(w http.ResponseWriter, r *http.Request, p *httputil
 	}
 
 	p.ServeHTTP(w, r)
+}
+
+func (s *Server) handleHookedWS(w http.ResponseWriter, r *http.Request, wp string) {
+	prot := wp
+
+	if pos := strings.IndexByte(wp, ','); pos > 0 {
+		prot = wp[:pos]
+		wp = strings.TrimSpace(wp[pos+1:])
+	}
+
+	websocket.Handler(func(conn *websocket.Conn) {
+		var justWait bool
+
+		s.mu.Lock()
+		existing := s.wsHooks[prot]
+		if existing == nil {
+			existing = &wsconn{conn: conn}
+			s.wsHooks[prot] = existing
+			justWait = true
+			existing.wg.Add(1)
+		}
+		s.mu.Unlock()
+
+		if justWait {
+			existing.wg.Wait()
+		} else {
+			go io.Copy(existing.conn, conn)
+			io.Copy(conn, existing.conn)
+
+			conn.Close()
+			existing.conn.Close()
+			existing.wg.Done()
+		}
+	}).ServeHTTP(w, r)
 }
 
 func (s *Server) getHookURL(r *http.Request) string {
