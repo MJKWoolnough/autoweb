@@ -1,4 +1,4 @@
-import {HTTPRequest, WS} from './lib/conn.js';
+import {HTTPRequest, WS, WSConn} from './lib/conn.js';
 import ready from './lib/load.js';
 import {queue} from './lib/misc.js';
 import {RPC} from './lib/rpc.js';
@@ -20,7 +20,8 @@ export type HookResponse = {
 
 queue(() => ready);
 
-let windowX = 0, windowY = 0;
+let windowX = 0, windowY = 0,
+    wsID = 0;
 
 const f = fetch,
       rpc = new RPC(),
@@ -32,6 +33,7 @@ const f = fetch,
 		document.documentElement.innerHTML = x;
       }),
       hooks = new Map<string, (req: Request) => HookResponse | null>(),
+      wsHooks = new Map<string, (ws: WSConn) => void>(),
       control = Object.freeze({
 	load,
 	"jumpMouse": (x: number, y: number) => queue(() => rpc.request("jumpMouse", [windowX + x|0, windowY + y|0])),
@@ -70,10 +72,40 @@ const f = fetch,
 		} else {
 			rpc.request("removeHook", url).then(() => hooks.delete(url));
 		}
+	},
+	"hookWS": (url: string, fn?: (ws: WSConn) => void) => {
+		if (fn) {
+			wsHooks.set(url, fn);
+		} else {
+			wsHooks.delete(url);
+		}
 	}
       });
 
-window.WebSocket = class extends WebSocket{};
+window.WebSocket = class extends WebSocket{
+	constructor(url: string | URL, protocols?: string | string[]){
+		const hook = wsHooks.get(typeof url === "string" ? url : url.toString());
+
+		if (hook) {
+			const hooked = `X-HOOKED-WS:${wsID++}`;
+
+
+			url = "/";
+			
+			if (protocols instanceof Array) {
+				protocols.splice(0, 0, hooked);
+			} else if (protocols) {
+				protocols = hooked + ", " + protocols;
+			} else {
+				protocols = hooked;
+			}
+
+			WS("/", hooked).then(hook);
+		}
+
+		super(url, protocols);
+	}
+};
 
 window.XMLHttpRequest = class extends XMLHttpRequest {
 	#hookURL = "";
