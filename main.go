@@ -47,41 +47,22 @@ func (b Browser) Launch(url string) *exec.Cmd {
 
 func run() error {
 	var (
-		browser   Browser
-		port      int
-		script    string
-		keepAlive bool
+		browser    Browser
+		port       int
+		scriptFile string
+		keepAlive  bool
 	)
 
 	flag.Var(&browser, "b", "Specify the browser to launch. Either just a path or a JSON encoded array of the command parts.")
 	flag.BoolVar(&keepAlive, "k", false, "don't exit when browser command returns")
 	flag.IntVar(&port, "p", 0, "Port for server to listen on.")
-	flag.StringVar(&script, "s", "", "Script to run.")
+	flag.StringVar(&scriptFile, "s", "", "Script to run.")
 	flag.Parse()
 
-	f, err := os.Open(script)
+	script, err := openScript(scriptFile)
 	if err != nil {
 		return err
 	}
-
-	tk := parser.NewReaderTokeniser(f)
-
-	var sb strings.Builder
-
-	if strings.HasSuffix(script, ".ts") {
-		m, err := javascript.ParseModule(javascript.AsTypescript(&tk))
-		if err != nil {
-			return err
-		}
-
-		fmt.Fprint(&sb, m)
-	} else {
-		if _, err := io.Copy(&sb, f); err != nil {
-			return err
-		}
-	}
-
-	f.Close()
 
 	l, err := net.ListenTCP("tcp", &net.TCPAddr{
 		IP:   net.IPv4(127, 0, 0, 1),
@@ -93,7 +74,7 @@ func run() error {
 
 	defer l.Close()
 
-	server := newServer(sb.String())
+	server := newServer(script)
 
 	go http.Serve(l, server)
 
@@ -119,4 +100,31 @@ func run() error {
 	}
 
 	return cmd.Wait()
+}
+
+func openScript(scriptFile string) (string, error) {
+	f, err := os.Open(scriptFile)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	tk := parser.NewReaderTokeniser(f)
+
+	var sb strings.Builder
+
+	if strings.HasSuffix(scriptFile, ".ts") {
+		m, err := javascript.ParseModule(javascript.AsTypescript(&tk))
+		if err != nil {
+			return "", err
+		}
+
+		fmt.Fprint(&sb, m)
+	} else {
+		if _, err := io.Copy(&sb, f); err != nil {
+			return "", err
+		}
+	}
+
+	return sb.String(), nil
 }
