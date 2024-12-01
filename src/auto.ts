@@ -28,9 +28,9 @@ const f = fetch,
       originalPage = Array.from(document.documentElement.children),
       fixButton = (button?: MouseButton) => button === "centre" || button === "middle" ? "center" : button ?? "left",
       load = (path: string) => HTTPRequest(path, {"headers": {"Cache-Control": "no-cache, no-store, max-age=0"}}).then(x => {
-		history.pushState(+new Date(), "", new URL(path, window.location + ""));
+	history.pushState(+new Date(), "", new URL(path, window.location + ""));
 
-		document.documentElement.innerHTML = x;
+	document.documentElement.innerHTML = x;
       }),
       hooks = new Map<string, (req: Request) => HookResponse | null>(),
       wsHooks = new Map<string, (ws: WSConn) => void>(),
