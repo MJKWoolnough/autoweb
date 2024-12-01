@@ -72,11 +72,13 @@ func run() error {
 		return err
 	}
 
+	return launch(l, browser, keepAlive, script)
+}
+
+func launch(l net.Listener, browser Browser, keepAlive bool, script string) error {
 	defer l.Close()
 
-	server := newServer(script)
-
-	go http.Serve(l, server)
+	go http.Serve(l, newServer(script))
 
 	c := make(chan os.Signal, 1)
 
