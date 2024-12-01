@@ -1,3 +1,13 @@
 #!/bin/bash
 
-jspacker -i "/src/auto.js" -n -e | terser -m  --module --compress pure_getters,passes=3 --ecma 2020 | tr -d '\n' > auto.js;
+declare tmpFile="$(mktemp)";
+
+cleanup() {
+	rm -f "$tmpFile";
+}
+
+trap cleanup EXIT;
+
+jspacker -i "/src/auto.js" -n -e | terser -m  --module --compress pure_getters,passes=3 --ecma 2020 | tr -d '\n' > "$tmpFile";
+
+zopfli --gzip --i1000 -c "$tmpFile" > auto.js.gz;
