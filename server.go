@@ -9,8 +9,10 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"golang.org/x/net/websocket"
+	"vimagination.zapto.org/httpembed"
 	"vimagination.zapto.org/jsonrpc"
 )
 
@@ -18,8 +20,8 @@ var (
 	//go:embed index.html
 	indexHTML string
 
-	//go:embed auto.js
-	codeJS string
+	//go:embed auto.js.gz
+	codeJS []byte
 )
 
 type HTTPResponse struct {
@@ -53,7 +55,7 @@ func newServer(source string) *Server {
 	s := new(Server)
 
 	s.mux.Handle("/", serveContents(indexHTML))
-	s.mux.Handle("/auto.js", serveContents(codeJS))
+	s.mux.Handle("/auto.js", httpembed.HandleBuffer("auto.js", codeJS, 0, time.Now()))
 	s.mux.Handle("/script.js", serveContents(source))
 	s.mux.Handle("/socket", websocket.Handler(s.intiRPC))
 
