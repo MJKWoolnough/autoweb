@@ -64,15 +64,46 @@ func run() error {
 		return err
 	}
 
-	l, err := net.ListenTCP("tcp", &net.TCPAddr{
-		IP:   net.IPv4(127, 0, 0, 1),
-		Port: port,
-	})
+	l, err := listen(port)
 	if err != nil {
 		return err
 	}
 
 	return launch(l, browser, keepAlive, script)
+}
+
+func openScript(scriptFile string) (string, error) {
+	f, err := os.Open(scriptFile)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	tk := parser.NewReaderTokeniser(f)
+
+	var sb strings.Builder
+
+	if strings.HasSuffix(scriptFile, ".ts") {
+		m, err := javascript.ParseModule(javascript.AsTypescript(&tk))
+		if err != nil {
+			return "", err
+		}
+
+		fmt.Fprint(&sb, m)
+	} else {
+		if _, err := io.Copy(&sb, f); err != nil {
+			return "", err
+		}
+	}
+
+	return sb.String(), nil
+}
+
+func listen(port int) (net.Listener, error) {
+	return net.ListenTCP("tcp", &net.TCPAddr{
+		IP:   net.IPv4(127, 0, 0, 1),
+		Port: port,
+	})
 }
 
 func launch(l net.Listener, browser Browser, keepAlive bool, script string) error {
@@ -102,31 +133,4 @@ func launch(l net.Listener, browser Browser, keepAlive bool, script string) erro
 	}
 
 	return cmd.Wait()
-}
-
-func openScript(scriptFile string) (string, error) {
-	f, err := os.Open(scriptFile)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	tk := parser.NewReaderTokeniser(f)
-
-	var sb strings.Builder
-
-	if strings.HasSuffix(scriptFile, ".ts") {
-		m, err := javascript.ParseModule(javascript.AsTypescript(&tk))
-		if err != nil {
-			return "", err
-		}
-
-		fmt.Fprint(&sb, m)
-	} else {
-		if _, err := io.Copy(&sb, f); err != nil {
-			return "", err
-		}
-	}
-
-	return sb.String(), nil
 }
