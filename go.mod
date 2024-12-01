@@ -36,4 +36,7 @@ require (
 	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6 // indirect
 	golang.org/x/image v0.21.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
+	vimagination.zapto.org/httpembed v1.3.0 // indirect
+	vimagination.zapto.org/httpencoding v1.0.0 // indirect
+	vimagination.zapto.org/memfs v1.0.0 // indirect
 )
