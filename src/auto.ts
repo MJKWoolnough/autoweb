@@ -89,7 +89,6 @@ window.WebSocket = class extends WebSocket{
 		if (hook) {
 			const hooked = `X-HOOKED-WS:${wsID++}`;
 
-
 			url = "/";
 			
 			if (protocols instanceof Array) {
