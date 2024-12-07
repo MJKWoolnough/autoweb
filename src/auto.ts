@@ -20,6 +20,9 @@ export type HookResponse = {
 
 queue(() => ready);
 
+localStorage.clear();
+sessionStorage.clear();
+
 let windowX = 0, windowY = 0,
     wsID = 0;
 
