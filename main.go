@@ -69,6 +69,8 @@ func run() error {
 		return err
 	}
 
+	defer l.Close()
+
 	return launch(l, browser, keepAlive, script)
 }
 
@@ -107,8 +109,6 @@ func listen(port int) (net.Listener, error) {
 }
 
 func launch(l net.Listener, browser Browser, keepAlive bool, script string) error {
-	defer l.Close()
-
 	go http.Serve(l, newServer(script))
 
 	c := make(chan os.Signal, 1)
