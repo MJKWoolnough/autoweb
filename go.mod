@@ -5,7 +5,7 @@ go 1.23.2
 require (
 	github.com/go-vgo/robotgo v0.110.5
 	golang.org/x/net v0.37.0
-	vimagination.zapto.org/httpembed v1.3.0
+	vimagination.zapto.org/httpembed v1.4.0
 	vimagination.zapto.org/javascript v1.4.18
 	vimagination.zapto.org/jsonrpc v1.3.0
 	vimagination.zapto.org/parser v1.0.4
@@ -38,6 +38,6 @@ require (
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/image v0.24.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
-	vimagination.zapto.org/httpencoding v1.0.0 // indirect
+	vimagination.zapto.org/httpencoding v1.1.2 // indirect
 	vimagination.zapto.org/memfs v1.1.0 // indirect
 )
