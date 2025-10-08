@@ -1,14 +1,14 @@
 module vimagination.zapto.org/autoweb
 
-go 1.23.2
+go 1.24
 
 require (
 	github.com/go-vgo/robotgo v0.110.5
 	golang.org/x/net v0.37.0
-	vimagination.zapto.org/httpembed v1.4.0
-	vimagination.zapto.org/javascript v1.4.18
-	vimagination.zapto.org/jsonrpc v1.3.0
-	vimagination.zapto.org/parser v1.0.4
+	vimagination.zapto.org/httpembed v1.4.1
+	vimagination.zapto.org/javascript v1.5.1
+	vimagination.zapto.org/jsonrpc v1.3.1
+	vimagination.zapto.org/parser v1.2.3
 )
 
 require (
