@@ -3,6 +3,7 @@ package main
 import (
 	_ "embed"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -187,9 +188,7 @@ func (s *Server) handleHook(w http.ResponseWriter, r *http.Request, hookURL stri
 	}
 
 	if resp != nil {
-		for key, value := range resp.Headers {
-			w.Header()[key] = value
-		}
+		maps.Copy(w.Header(), resp.Headers)
 
 		return &HTTPResponse{resp.Code, resp.Body}
 	}
