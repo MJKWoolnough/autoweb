@@ -8,6 +8,6 @@ cleanup() {
 
 trap cleanup EXIT;
 
-jspacker -i "/src/auto.js" -n -e | terser -m  --module --compress pure_getters,passes=3 --ecma 2020 | tr -d '\n' > "$tmpFile";
+jspacker -b ./ -i "/src/auto.js" -n -e -M '["terser", "-m", "--module", "--compress", "pure_getters,passes=3", "--ecma", "2020"]' -o "$tmpFile";
 
 zopfli --gzip --i1000 -c "$tmpFile" > auto.js.gz;
