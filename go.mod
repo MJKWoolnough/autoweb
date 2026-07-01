@@ -7,7 +7,7 @@ require (
 	golang.org/x/net v0.37.0
 	vimagination.zapto.org/httpembed v1.4.1
 	vimagination.zapto.org/javascript v1.7.5
-	vimagination.zapto.org/jsonrpc v1.3.1
+	vimagination.zapto.org/jsonrpc v1.3.2
 	vimagination.zapto.org/parser v1.2.3
 )
 
