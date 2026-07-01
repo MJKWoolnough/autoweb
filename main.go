@@ -91,7 +91,7 @@ func openScript(scriptFile string) (string, error) {
 			return "", err
 		}
 
-		fmt.Fprint(&sb, m)
+		fmt.Fprintf(&sb, "%#s", m)
 	} else {
 		if _, err := io.Copy(&sb, f); err != nil {
 			return "", err
